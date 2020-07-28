@@ -11,46 +11,46 @@ namespace GMPhotoPicker.Xamarin
 {
 	public partial class ViewController : UIViewController
 	{
-		public ViewController (IntPtr handle) : base (handle)
+		public ViewController(IntPtr handle) : base(handle)
 		{
 		}
 
-		public override void ViewDidLoad ()
+		public override void ViewDidLoad()
 		{
-			base.ViewDidLoad ();
+			base.ViewDidLoad();
 			// Perform any additional setup after loading the view, typically from a nib.
 		}
 
-		public override void DidReceiveMemoryWarning ()
+		public override void DidReceiveMemoryWarning()
 		{
-			base.DidReceiveMemoryWarning ();
+			base.DidReceiveMemoryWarning();
 			// Release any cached data, images, etc that aren't in use.
 		}
 
 		private PHAsset[] _preselectedAssets;
 
-		async partial void ShowGMImagePicker (NSObject sender)
+		async partial void ShowGMImagePicker(NSObject sender)
 		{
 			var picker = new GMImagePickerController
 			{
 				Title = "Custom Title",
 				CustomDoneButtonTitle = "Finished",
-				CustomCancelButtonTitle = "Nope",
+				CustomCancelButtonTitle = "V",
 				CustomNavigationBarPrompt = "Take a new photo or select an existing one!",
 				ColsInPortrait = 3,
 				ColsInLandscape = 5,
 				MinimumInteritemSpacing = 2.0f,
-				DisplaySelectionInfoToolbar = true,
-				AllowsMultipleSelection = true,
-				ShowCameraButton = true,
-				AutoSelectCameraImages = true,
-				AllowsEditingCameraImages = true,
+				DisplaySelectionInfoToolbar = false,
+				AllowsMultipleSelection = false,
+				ShowCameraButton = false,
+				AutoSelectCameraImages = false,
+				AllowsEditingCameraImages = false,
 				ModalPresentationStyle = UIModalPresentationStyle.Popover,
 				MediaTypes = new[] { PHAssetMediaType.Image },
 
 				// Other customizations to play with:
-				//AdditionalToolbarItems = new UIBarButtonItem[] { new UIBarButtonItem(UIBarButtonSystemItem.Bookmarks), new UIBarButtonItem("Custom", UIBarButtonItemStyle.Bordered, (s, e) => { Console.WriteLine("test"); })},
-				//GridSortOrder = SortOrder.Descending,
+				//AdditionalToolbarItems = new UIBarButtonItem[] { new UIBarButtonItem(UIBarButtonSystemItem.Bookmarks), new UIBarButtonItem("Custom", UIBarButtonItemStyle.Bordered, (s, e) => { Console.WriteLine("test"); }) },
+				GridSortOrder = SortOrder.Descending,
 				//ConfirmSingleSelection = true,
 				//ConfirmSingleSelectionPrompt = "Do you want to select the image you have chosen?",
 				//PickerBackgroundColor = UIColor.Black,
@@ -72,10 +72,11 @@ namespace GMPhotoPicker.Xamarin
 				//UseCustomFontForNavigationBar = true,
 			};
 
+
 			// You can limit which galleries are available to browse through
-			picker.CustomSmartCollections = new [] { 
+			picker.CustomSmartCollections = new[] { 
 				PHAssetCollectionSubtype.SmartAlbumUserLibrary, 
-				PHAssetCollectionSubtype.AlbumRegular 
+				PHAssetCollectionSubtype.AlbumRegular
 			};
 
 			if (_preselectedAssets != null)
@@ -90,68 +91,83 @@ namespace GMPhotoPicker.Xamarin
 			picker.FinishedPickingAssets += Picker_FinishedPickingAssets;
 			picker.Canceled += Picker_Canceled;
 
-            // Other events to implement in order to influence selection behavior:
-            // Set EventArgs::Cancel flag to true in order to prevent the action from happening
-            picker.ShouldDeselectAsset += (s, e) => { /* allow deselection of (mandatory) assets */ };
-            picker.ShouldEnableAsset += (s, e) => { /* determine if a specific asset should be enabled */ };
-            picker.ShouldHighlightAsset += (s, e) => { /* determine if a specific asset should be highlighted */ };
-            picker.ShouldShowAsset += (s, e) => { /* determine if a specific asset should be displayed */ };
-            picker.ShouldSelectAsset += (s, e) => { /* determine if a specific asset can be selected */ };
+			// Other events to implement in order to influence selection behavior:
+			// Set EventArgs::Cancel flag to true in order to prevent the action from happening
+			picker.ShouldDeselectAsset += (s, e) => { /* allow deselection of (mandatory) assets */ };
+			picker.ShouldEnableAsset += (s, e) => { /* determine if a specific asset should be enabled */ };
+			picker.ShouldHighlightAsset += (s, e) => { /* determine if a specific asset should be highlighted */ };
+			picker.ShouldShowAsset += (s, e) => { /* determine if a specific asset should be displayed */ };
+			picker.ShouldSelectAsset += (s, e) => { /* determine if a specific asset can be selected */ };
 
 			picker.AssetSelected += (s, e) => { /* keep track of individual asset selection */ };
 			picker.AssetDeselected += (s, e) => { /* keep track of individual asset de-selection */ };
+			//picker.AddChildViewController
 
 			// GMImagePicker can be treated as a PopOver as well:
 			var popPC = picker.PopoverPresentationController;
 			popPC.PermittedArrowDirections = UIPopoverArrowDirection.Any;
 			popPC.SourceView = gmImagePickerButton;
 			popPC.SourceRect = gmImagePickerButton.Bounds;
-			//popPC.BackgroundColor = UIColor.Black;
+			popPC.BackgroundColor = UIColor.Black;
+
+			// Init the GMGridViewController
+			//var gridViewController = new GMGridViewController(_picker);
+
+			// Set the title
+			//gridViewController.Title = _collectionsFetchResultsTitles[indexPath.Section][indexPath.Row];
+			// Use the prefetched assets!
+			//gridViewController.AssetsFetchResults = _collectionsFetchResultsAssets[indexPath.Section][indexPath.Row];
+
+			// Push GMGridViewController
+			//NavigationController.PushViewController(gridViewController, true);
 
 			await PresentViewControllerAsync(picker, true);
 		}
 
-		void Picker_Canceled (object sender, EventArgs e)
+		void Picker_Canceled(object sender, EventArgs e)
 		{
-			if (sender is UIImagePickerController) {
-				((UIImagePickerController)sender).DismissViewController (true, null);
+			if (sender is UIImagePickerController)
+			{
+				((UIImagePickerController)sender).DismissViewController(true, null);
 			}
-			Console.WriteLine ("User canceled picking image.");
+			Console.WriteLine("User canceled picking image.");
 		}
 
-		async void Picker_FinishedPickingAssets (object sender, MultiAssetEventArgs args)
+		async void Picker_FinishedPickingAssets(object sender, MultiAssetEventArgs args)
 		{
 			PHImageManager imageManager = new PHImageManager();
 
-			Console.WriteLine ("User finished picking assets. {0} items selected.", args.Assets.Length);
+			Console.WriteLine("User finished picking assets. {0} items selected.", args.Assets.Length);
 
 			_preselectedAssets = args.Assets;
 
 			// For demo purposes: just show all chosen pictures in order every second
-			foreach (var asset in args.Assets) {
+			foreach (var asset in args.Assets)
+			{
 				imagePreview.Image = null;
 
 				// Get information about the asset, e.g. file patch
-				asset.RequestContentEditingInput(new PHContentEditingInputRequestOptions(), 
-					(input, _) => 
-					{ 
-						Console.WriteLine(input.FullSizeImageUrl); 
+				asset.RequestContentEditingInput(new PHContentEditingInputRequestOptions(),
+					(input, _) =>
+					{
+						Console.WriteLine(input.FullSizeImageUrl);
 					});
 
-				imageManager.RequestImageForAsset (asset, 
-					new CGSize(asset.PixelWidth, asset.PixelHeight), 
-					PHImageContentMode.Default, 
-					null, 
+				imageManager.RequestImageForAsset(asset,
+					new CGSize(asset.PixelWidth, asset.PixelHeight / 2),
+					PHImageContentMode.Default,
+					null,
 					(image, info) => {
 						imagePreview.Image = image;
-				});
-				await Task.Delay (1000);
+					});
+				await Task.Delay(1000);
 			}
 		}
 
-		partial void ShowUIImagePicker (NSObject sender)
+		partial void ShowUIImagePicker(NSObject sender)
 		{
-			var picker = new UIImagePickerController {
+			var picker = new UIImagePickerController
+			{
 				SourceType = UIImagePickerControllerSourceType.PhotoLibrary,
 				ModalPresentationStyle = UIModalPresentationStyle.Popover,
 				MediaTypes = new string[] { UTType.Image },
@@ -165,23 +181,23 @@ namespace GMPhotoPicker.Xamarin
 			popPC.PermittedArrowDirections = UIPopoverArrowDirection.Any;
 			popPC.SourceView = uiImagePickerButton;
 			popPC.SourceRect = uiImagePickerButton.Bounds;
-			
-			ShowViewController (picker, this);
+
+			ShowViewController(picker, this);
 		}
 
-		void Picker_FinishedPickingImage (object sender, UIImagePickerImagePickedEventArgs e)
+		void Picker_FinishedPickingImage(object sender, UIImagePickerImagePickedEventArgs e)
 		{
-			((UIImagePickerController)sender).DismissViewController (true, null);
+			((UIImagePickerController)sender).DismissViewController(true, null);
 
-			Console.WriteLine ("UIImagePicker finished picking image");
+			Console.WriteLine("UIImagePicker finished picking image");
 			imagePreview.Image = e.Image;
 		}
 
-		void Picker_FinishedPickingMedia (object sender, UIImagePickerMediaPickedEventArgs e)
+		void Picker_FinishedPickingMedia(object sender, UIImagePickerMediaPickedEventArgs e)
 		{
-			((UIImagePickerController)sender).DismissViewController (true, null);
+			((UIImagePickerController)sender).DismissViewController(true, null);
 
-			Console.WriteLine ("UIImagePicker finished picking media");
+			Console.WriteLine("UIImagePicker finished picking media");
 			imagePreview.Image = e.OriginalImage;
 		}
 	}

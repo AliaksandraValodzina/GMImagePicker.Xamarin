@@ -42,9 +42,9 @@ namespace GMImagePicker
 
 		private List<PHFetchResult> _collectionsFetchResults;
 		private List<string> _collectionsLocalizedTitles;
-		private PHFetchResult[][] _collectionsFetchResultsAssets;
+		public PHFetchResult[][] _collectionsFetchResultsAssets;
 		private string[][] _collectionsFetchResultsTitles;
-		private GMImagePickerController _picker;
+		public GMImagePickerController _picker;
 		private PHCachingImageManager _imageManager;
 
 		private const string AllPhotosReuseIdentifier = "AllPhotosCell";
@@ -98,6 +98,17 @@ namespace GMImagePicker
 			
 				TableView.ReloadData();
 			});			
+		}
+
+		public void Test()
+        {
+			// Fetch PHAssetCollections
+			var topLevelUserCollections = PHCollection.FetchTopLevelUserCollections(null);
+			var smartAlbums = PHAssetCollection.FetchAssetCollections(PHAssetCollectionType.SmartAlbum, PHAssetCollectionSubtype.AlbumRegular, null);
+			_collectionsFetchResults = new List<PHFetchResult> { topLevelUserCollections, smartAlbums };
+			_collectionsLocalizedTitles = new List<string> { "picker.table.user-albums-header".Translate(defaultValue: "Albums"), "picker.table.smart-albums-header".Translate("Smart Albums") };
+
+			UpdateFetchResults();
 		}
 
 		public override void ViewDidLoad()
@@ -166,6 +177,9 @@ namespace GMImagePicker
 
 			// Register for changes
 			PHPhotoLibrary.SharedPhotoLibrary.RegisterChangeObserver(this);
+
+			// Test
+			SelectAllAlbumsCell();
 		}
 
 		private void FinishPickingAssets (object sender, EventArgs args)
@@ -205,7 +219,7 @@ namespace GMImagePicker
 			RowSelected(TableView, path);
 		}
 
-		private void UpdateFetchResults()
+		public void UpdateFetchResults()
 		{
 			//What I do here is fetch both the albums list and the assets of each album.
 			//This way I have acces to the number of items in each album, I can load the 3

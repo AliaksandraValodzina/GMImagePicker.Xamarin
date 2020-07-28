@@ -634,6 +634,7 @@ namespace GMImagePicker
 				PHAssetCollectionSubtype.SmartAlbumBursts,
 				PHAssetCollectionSubtype.SmartAlbumPanoramas
 			};
+
 			// If you don't want to show smart collections, just set CustomSmartCollections to null
 
 			// Which media types will display
@@ -786,15 +787,21 @@ namespace GMImagePicker
 		private void SetupNavigationController()
 		{
 			if (_albumsViewController == null) {
-				_albumsViewController = new GMAlbumsViewController ();
+				_albumsViewController = new GMAlbumsViewController();
 			}
-			_navigationController = new UINavigationController (_albumsViewController);
+			_albumsViewController._picker = this;
+			_albumsViewController.Test();
+
+			var _gridViewController = new GMGridViewController(this);
+			_gridViewController.AssetsFetchResults = _albumsViewController._collectionsFetchResultsAssets[0][0];
+
+			_navigationController = new UINavigationController (_gridViewController);
 			_navigationController.Delegate = new GMNavigationControllerDelegate ();
 
 			_navigationController.NavigationBar.Translucent = true;
 
 			_navigationController.View.Frame = View.Frame;
-			_navigationController.WillMoveToParentViewController (this);
+			_navigationController.WillMoveToParentViewController(this);
 			View.AddSubview (_navigationController.View);
 			AddChildViewController (_navigationController);
 			_navigationController.DidMoveToParentViewController (this);
